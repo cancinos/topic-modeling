@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 import click
 import logging
+import pandas as pd
+import re
+import pickle
+from pprint import pprint
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
+from src.utils import text_processing
 
 
 @click.command()
@@ -14,6 +19,16 @@ def main(input_filepath, output_filepath):
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
+
+    df = pd.read_json(input_filepath)
+    data = df.content.values.tolist()
+    data = [re.sub(r'\S*@\S*\s?', '', sent) for sent in data] # Eliminate emails in data
+    data = [re.sub(r'\s+', ' ', sent) for sent in data] # Eliminate new lines in data
+    data = [re.sub(r"\'", "", sent) for sent in data] # Eliminate ''
+    words = list(text_processing.sentences_to_words(data))
+    with open(output_filepath, 'wb') as file:
+        pickle.dump(words, file)
+        #pd.DataFrame(words).to_json(file, force_ascii=False)
 
 
 if __name__ == '__main__':
